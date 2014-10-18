@@ -1,0 +1,69 @@
+关于非压缩数据的说明
+About Raw Data
+
+雷霄骅 Lei Xiaohua
+leixiaohua1020@126.com
+中国传媒大学/数字电视技术
+Communication University of China / Digital TV Technology
+http://blog.csdn.net/leixiaohua1020
+
+本工程中包含的视音频数据都是没有文件头的原始数据，因此体积很大。为了保证工程打包后体积不
+过于臃肿，只保留了几秒钟的视频数据（RGB，YUV）以及音频数据（PCM）。如果想要获得大段的
+视音频数据，可以使用FFmpeg解码获得。下面列出几种获取视音频数据的方法。
+（1）获取视频文件的YUV像素数据：
+		输入文件是in.flv，输出文件是out.yuv，输出的像素格式是yuv420p
+		ffmpeg -i in.flv -pix_fmt yuv420p out.yuv
+（2）获取视频文件的RGB24像素数据：
+		输入文件是in.flv，输出文件是out.rgb，输出的像素格式是rgb24
+		ffmpeg -i in.flv -pix_fmt rgb24 out.yuv
+（3）获取音频（或者视频文件中）的PCM采样数据：
+		输入文件是in.flv，输出文件是out.pcm，输出的音频采样格式是PCM 16bit Little Endian
+		ffmpeg -i in.flv -f s16le out.pcm
+（4）像素数据之间的转换：
+		YUV420p转换为RGB24如下所示。输入文件是in_320x240.yuv，输出文件是out_320x240.rgb。
+		分辨率是320x240
+		ffmpeg -s 320x240 -pix_fmt yuv420p -i in_320x240.yuv -pix_fmt rgb24 -s 320x240 out_320x240.rgb
+
+About Raw Audio/Video Data:
+The size of raw audio/video data (no file header) is very big. So I only give several seconds of 
+raw video/audio data for test. The best way to get more raw data is to decode the compressed 
+video/audio using FFmpeg.
+
+Here shows some of the commands:
+
+(1)Get YUV pixel data
+		Input file is in.flv, Output file is out.yuv, Output pixel format is yuv420p
+		ffmpeg -i in.flv -pix_fmt yuv420p out.yuv
+(2)Get RGB24 pixel data
+		Input file is in.flv, Output file is out.rgb, Output pixel format is rgb24
+		ffmpeg -i in.flv -pix_fmt rgb24 out.yuv
+(3)Get PCM data
+		Input file is in.flv, Output file is out.pcm, Output sample format is PCM 16bit Little Endian
+		ffmpeg -i in.flv -f s16le out.pcm
+(4)Convert between video's raw pixel data
+		YUV420p convert to RGB24. Input file is in_320x240.yuv, Output file is out_320x240.rgb.
+		Resolution is 320x240.
+		ffmpeg -s 320x240 -pix_fmt yuv420p -i in_320x240.yuv -pix_fmt rgb24 -s 320x240 out_320x240.rgb
+		
+		
+下面示例说明像素数据的格式。在说明像素数据之前，先区别一下像素存放过程中的Big Endian和Little Endian。
+Raw Data's format is shown as follows:
+
+test_rgb24_320x180.rgb
+R1G1B1,R2G2B2,R3G3B3.....
+
+test_bgr24_320x180.rgb
+B1G1R1,B2G2R2,B3G3R3.....
+
+test_rgb32_320x180.rgb
+A1R1G1B1,A2R2G2B2,A3R3G3B3.....
+
+test_yuv420p_320x180.yuv
+YYYYYYYYYY...
+YYYYYYYYYY...
+UUUUU...
+VVVVV...
+
+NocturneNo2inEflat_44.1k_s16le.pcm(16bit PCM, Stereo)：
+L1L1,R1R1,L2L2,R2R2,L3L3,R3R3
+

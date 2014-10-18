@@ -1,0 +1,420 @@
+/**
+ * 最简单的Direct3D播放视频的例子（Direct3D播放RGB/YUV）
+ * Simplest Video Play Direct3D (Direct3D play RGB/YUV) 
+ *
+ * 雷霄骅 Lei Xiaohua
+ * leixiaohua1020@126.com
+ * 中国传媒大学/数字电视技术
+ * Communication University of China / Digital TV Technology
+ * http://blog.csdn.net/leixiaohua1020
+ *
+ * 本程序使用Direct3D播放RGB/YUV视频像素数据。
+ * 是最简单的Direct3D播放视频的教程。
+ *
+ * This software plays RGB/YUV raw video data using Direct3D.
+ * It's the simplest Direct3D tutorial (About video playback).
+ */
+
+#include <stdio.h>
+#include <tchar.h>
+#include <d3d9.h>
+
+//灵活顶点格式（Flexible Vertex Format，FVF）来描述三角形网格的每个顶点。
+//创建自定义灵活顶点格式时，根据实际的需求，需要定义一个包含特定顶点信息的结构体。
+typedef struct
+{
+	FLOAT       x,y,z;      // vertex untransformed position
+	FLOAT       rhw;        // eye distance
+	D3DCOLOR    diffuse;    // diffuse color
+	FLOAT       tu, tv;     // texture relative coordinates
+} CUSTOMVERTEX;
+
+CRITICAL_SECTION  m_critial;
+HWND     m_hVideoWnd;  // 视频窗口
+
+IDirect3D9 *m_pDirect3D9;
+IDirect3DDevice9 *m_pDirect3DDevice;
+IDirect3DSurface9 *m_pDirect3DSurfaceRender;
+IDirect3DTexture9 *m_pDirect3DTexture;
+IDirect3DVertexBuffer9 *m_pDirect3DVertexBuffer;
+/*
+	单单定义出结构体， Direct3D是不能理解我们在干嘛的，这时候，我们需要一个宏来传
+	达我们定义的顶点有哪些属性。
+	常用的FVF格式如下：
+	D3DFVF_XYZ
+	包含未经过坐标变换的顶点坐标值。
+	D3DFVF_XYZRHW
+	包含经过坐标变换的顶点坐标值。
+	在顶点结构体中没有RHW时，Direct3D将执行视、投影、世界等变换以及进行光线计算，之后你
+	才能在窗口中得到你所绘制的物体。这时默认的用户区中心坐标是（0，0）。当顶点结构体中有
+	RHW时，表明Direct3D使用的顶点已经在屏幕坐标系中了，不再执行视图、投影、世界等变换和光
+	线计算。任何用SetTransform进行的转换都对其无效。这时的原点就在客户区的左上角了，其中x
+	向右为正，y向下为正，而z的意义已经变为z-buffer的象素深度。
+
+	D3DFVF_NORMAL:包含法线向量的数值
+	D3DFVF_DIFFUSE:包含漫反射的颜色值
+	D3DFVF_SPECULAR:包含镜面反射的数值
+	D3DFVF_TEX1~8:表示包含1~8个纹理坐标信息，是几重纹理后缀就用几，最多8层纹理
+*/
+// Custom flexible vertex format (FVF), which describes custom vertex structure
+#define D3DFVF_CUSTOMVERTEX (D3DFVF_XYZRHW|D3DFVF_DIFFUSE|D3DFVF_TEX1)
+
+
+//Width, Height
+int screen_w=500,screen_h=500;
+int pixel_w=320,pixel_h=240;
+FILE *fp=NULL;
+//Bit per Pixel
+int bpp=32;
+//For YUV420P
+byte *raw_buffer=(byte *)malloc(pixel_w*pixel_h*bpp/8);
+
+void Init_Var() 
+{
+	InitializeCriticalSection(&m_critial);
+	// Direct3D
+	m_pDirect3D9    = NULL;
+	m_pDirect3DDevice   = NULL;
+	m_pDirect3DSurfaceRender = NULL;
+	m_pDirect3DTexture   = NULL;
+	m_pDirect3DVertexBuffer  = NULL;
+}
+
+void Cleanup()
+{
+	EnterCriticalSection(&m_critial);
+	if(m_pDirect3DVertexBuffer)
+		m_pDirect3DVertexBuffer->Release();
+	if(m_pDirect3DTexture)
+		m_pDirect3DTexture->Release();
+	if(m_pDirect3DSurfaceRender)
+		m_pDirect3DSurfaceRender->Release();
+	if(m_pDirect3DDevice)
+		m_pDirect3DDevice->Release();
+	if(m_pDirect3D9)
+		m_pDirect3D9->Release();
+	LeaveCriticalSection(&m_critial);
+}
+
+
+long InitD3D( HWND hwnd, unsigned long lWidth, unsigned long lHeight )
+{
+	HRESULT lRet;
+	Cleanup();
+	EnterCriticalSection(&m_critial);
+	// Create IDirect3D
+	m_pDirect3D9 = Direct3DCreate9( D3D_SDK_VERSION );
+	if ( m_pDirect3D9 == NULL ){
+		LeaveCriticalSection(&m_critial);
+		return E_FAIL;
+	}
+
+	if ( lWidth == 0 || lHeight == 0 ){
+		RECT rt;
+		GetClientRect( hwnd, &rt );
+		lWidth = rt.right-rt.left;
+		lHeight = rt.bottom-rt.top;
+	}
+
+	// 检查是否支持后台渲染和窗口的显示
+	D3DDISPLAYMODE d3dDisplayMode;
+	lRet = m_pDirect3D9->GetAdapterDisplayMode( D3DADAPTER_DEFAULT, &d3dDisplayMode );
+	if ( FAILED(lRet) ){
+		LeaveCriticalSection(&m_critial);
+		return E_FAIL;
+	}
+
+	// 创建Direct3D设备
+
+	//d3d的显示参数设置
+	D3DPRESENT_PARAMETERS d3dpp;
+	ZeroMemory( &d3dpp, sizeof(d3dpp) );
+	d3dpp.Flags = D3DPRESENTFLAG_VIDEO;
+	d3dpp.Windowed   = TRUE;
+	//显示设备输出窗口的句柄
+	d3dpp.hDeviceWindow  = hwnd;
+	//后备缓冲的宽度和高度
+	d3dpp.BackBufferWidth = lWidth;   
+	d3dpp.BackBufferHeight = lHeight;
+	//交换缓冲支持的效果类型，指定表面在交换链中是如何被交换的。支持3种：
+	//D3DSWAPEFFECT_DISCARD:后备缓冲区的东西被复制到屏幕上后,后备缓冲区的东西就没有什么用了,可以丢弃了。
+	//D3DSWAPEFFECT_FLIP:	后备缓冲拷贝到前台缓冲，保持后备缓冲内容不变。当后备缓冲大于1个时使用。
+	//D3DSWAPEFFECT_COPY:	同上。当后备缓冲等于1个时使用。
+	d3dpp.SwapEffect  = D3DSWAPEFFECT_COPY;				
+	//全屏抗锯齿的类型
+	d3dpp.MultiSampleType   = D3DMULTISAMPLE_NONE;	
+	//D3DPRENSENT_INTERVAL_DEFAULT，则说明在显示一个渲染画面的时候必要等候显示器刷新完一次屏幕。
+	//例如显示器刷新率设为80HZ的话，则一秒最多可以显示80个渲染画面。
+	//D3DPRENSENT_INTERVAL_IMMEDIATE:表示可以以实时的方式来显示渲染画面。
+	d3dpp.PresentationInterval   = D3DPRESENT_INTERVAL_DEFAULT;
+	//后备缓冲的格式。例如D3DFMT_R5G6B5、D3DFMT_X8R8G8B8等。
+	d3dpp.BackBufferFormat = d3dDisplayMode.Format;		
+	//后备缓冲的数目。范围是从0到3，如果为0，那就当成1来处理。
+	//大多数情况我们只使用1个后备缓冲。
+	d3dpp.BackBufferCount        = 1;
+	//如果要使用Z缓冲或模板缓冲，则把它设为TRUE。
+	d3dpp.EnableAutoDepthStencil = FALSE;
+
+	m_hVideoWnd = hwnd;
+
+	//创建硬件渲染设备
+	//Adapter:		序数所指示的显示器适配器。D3DADAPTER_DEFAULT始终是主要的显示器适配器。
+	//D3DDEVTYPE:	D3DDEVTYPE_HAL((Hardware Accelerator，硬件加速)、D3DDEVTYPE_SW(SoftWare，软件)
+	//hFocusWindow：与设备相关的窗口句柄，哪个窗口绘制就写那个窗口的句柄。
+	//BehaviorFlags：设定为D3DCREATE_SOFTWARE_VERTEXPROCESSING(软件顶点处理) 或者D3DCREATE_HARDWARE_VERTEXPROCESSING
+	//				(硬件顶点处理) ,使用前应该用d3dcaps来检测用户计算机是否支持硬件顶点处理功能。
+	//Creates a device to represent the display adapter.
+	lRet = m_pDirect3D9->CreateDevice( D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, NULL,
+		D3DCREATE_SOFTWARE_VERTEXPROCESSING|D3DCREATE_MULTITHREADED, &d3dpp, &m_pDirect3DDevice );
+
+	//纹理坐标简单地说就是纹理图象到要贴纹理的表面的一个映射 。
+	//通常使用的 u、v 纹理坐标的取值范围是[0.0, 1.0]
+	//比如纹理坐标是(0.5,0.0)，就是把二维纹理横向二分之一处（整个是1）的点映射到你随后定义的物体顶点上去
+	//二维纹理中，规定纹理最左下角的坐标为(0, 0)，最右上角的坐标为(1, 1)，于是纹理中的每一个像素的位置
+	//都可以用两个浮点数来表示。
+
+	//SetSamplerState()设置纹理过滤的放大过滤器和缩小过滤器
+
+	// Texture coordinates outside the range [0.0, 1.0] are set
+	// to the texture color at 0.0 or 1.0, respectively.
+	//纹理坐标通常在0-1之间，当处理那些不在这个范围内的纹理坐标时的策略就是address mode
+	//D3DTADDRESS_CLAMP:  小于0设为0 大于1设为1。
+	IDirect3DDevice9_SetSamplerState(m_pDirect3DDevice, 0, D3DSAMP_ADDRESSU, D3DTADDRESS_CLAMP);
+	IDirect3DDevice9_SetSamplerState(m_pDirect3DDevice, 0, D3DSAMP_ADDRESSV, D3DTADDRESS_CLAMP);
+	// Set linear filtering quality
+	//filtering是使用具体的0-1内的纹理坐标获取纹理上颜色值的策略。
+	//D3DSAMP_MINFILTER:  一个pixel采样到很多纹理点的时候，放小。
+	//D3DSAMP_MAGFILTER:  一个pixel采需要被映射到很多pixel的时候，放大。
+	//D3DTEXF_POINT：	默认的，也是最差的，基本现在都不用的，叫最近点策略（nearest）。
+	//LINEAR：			线性差值，一种效果较好的流行的方式（linear interpolation）。
+	IDirect3DDevice9_SetSamplerState(m_pDirect3DDevice, 0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
+	IDirect3DDevice9_SetSamplerState(m_pDirect3DDevice, 0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
+
+
+	//SetRenderState()设置渲染状态
+	//set maximum ambient light
+	//为整个场景设置环境光
+	IDirect3DDevice9_SetRenderState(m_pDirect3DDevice, D3DRS_AMBIENT, D3DCOLOR_XRGB(255,255,0));
+	// Turn off culling
+	IDirect3DDevice9_SetRenderState(m_pDirect3DDevice, D3DRS_CULLMODE, D3DCULL_NONE);
+	// Turn off the zbuffer
+	IDirect3DDevice9_SetRenderState(m_pDirect3DDevice, D3DRS_ZENABLE, D3DZB_FALSE);
+	// Turn off lights
+	IDirect3DDevice9_SetRenderState(m_pDirect3DDevice, D3DRS_LIGHTING, FALSE);
+	// Enable dithering
+	IDirect3DDevice9_SetRenderState(m_pDirect3DDevice, D3DRS_DITHERENABLE, TRUE);
+	// disable stencil
+	IDirect3DDevice9_SetRenderState(m_pDirect3DDevice, D3DRS_STENCILENABLE, FALSE);
+	// manage blending
+	IDirect3DDevice9_SetRenderState(m_pDirect3DDevice, D3DRS_ALPHABLENDENABLE, TRUE);
+	IDirect3DDevice9_SetRenderState(m_pDirect3DDevice, D3DRS_SRCBLEND,D3DBLEND_SRCALPHA);
+	IDirect3DDevice9_SetRenderState(m_pDirect3DDevice, D3DRS_DESTBLEND,D3DBLEND_INVSRCALPHA);
+	IDirect3DDevice9_SetRenderState(m_pDirect3DDevice, D3DRS_ALPHATESTENABLE,TRUE);
+	IDirect3DDevice9_SetRenderState(m_pDirect3DDevice, D3DRS_ALPHAREF, 0x10);
+	IDirect3DDevice9_SetRenderState(m_pDirect3DDevice, D3DRS_ALPHAFUNC,D3DCMP_GREATER);
+	// Set texture states
+	IDirect3DDevice9_SetTextureStageState(m_pDirect3DDevice, 0, D3DTSS_COLOROP,D3DTOP_MODULATE);
+	IDirect3DDevice9_SetTextureStageState(m_pDirect3DDevice, 0, D3DTSS_COLORARG1,D3DTA_TEXTURE);
+	IDirect3DDevice9_SetTextureStageState(m_pDirect3DDevice, 0, D3DTSS_COLORARG2,D3DTA_DIFFUSE);
+	// turn off alpha operation
+	IDirect3DDevice9_SetTextureStageState(m_pDirect3DDevice, 0, D3DTSS_ALPHAOP, D3DTOP_DISABLE);
+
+	// 创建纹理
+	//Create Texture
+	/*
+	Usage: D3DUSAGE_SOFTWAREPROCESSING表示使用软件来进行顶点运算，不指定这个值的话，就取的
+	是默认方式——硬件顶点运算。
+	D3DPool: 
+	D3D3POOL_DEFAULT: 默认值，表示顶点缓存存在于显卡的显存中。
+	D3D3POOL_MANAGED：由Direct3D自由调度顶点缓冲区内存的位置（显存或者缓存中）。
+	D3DPOOL_SYSTEMMEM： 表示顶点缓存位于内存中。
+	*/
+	lRet = m_pDirect3DDevice->CreateTexture(lWidth, lHeight, 1, D3DUSAGE_SOFTWAREPROCESSING,
+		D3DFMT_X8R8G8B8,
+		D3DPOOL_MANAGED,
+		&m_pDirect3DTexture, NULL );
+	if ( FAILED(lRet) ){
+		LeaveCriticalSection(&m_critial);
+		return E_FAIL;
+	}
+
+	// 创建顶点缓冲区
+	lRet = m_pDirect3DDevice->CreateVertexBuffer( 4 * sizeof(CUSTOMVERTEX),
+		0, D3DFVF_CUSTOMVERTEX, D3DPOOL_DEFAULT, &m_pDirect3DVertexBuffer, NULL );
+	if ( FAILED(lRet) ){
+		LeaveCriticalSection(&m_critial);
+		return E_FAIL;
+	}
+
+	// 填充顶点缓冲区
+	CUSTOMVERTEX *pVertex;
+	lRet = m_pDirect3DVertexBuffer->Lock( 0, 4 * sizeof(CUSTOMVERTEX), (void**)&pVertex, 0 );
+	if ( FAILED(lRet) ){
+		LeaveCriticalSection(&m_critial);
+		return E_FAIL;
+	}
+
+	/* -0.5f is a "feature" of DirectX and it seems to apply to Direct3d also */
+	pVertex[0].x       = -0.5f;       // left
+	pVertex[0].y       = -0.5f;       // top
+	pVertex[0].z       = 0.0f;
+	pVertex[0].diffuse = D3DCOLOR_ARGB(255, 255, 255, 255);
+	pVertex[0].rhw     = 1.0f;
+	pVertex[0].tu      = 0.0f;
+	pVertex[0].tv      = 0.0f;
+
+	pVertex[1].x       = lWidth - 0.5f;    // right
+	pVertex[1].y       = -0.5f;       // top
+	pVertex[1].z       = 0.0f;
+	pVertex[1].diffuse = D3DCOLOR_ARGB(255, 255, 255, 255);
+	pVertex[1].rhw     = 1.0f;
+	pVertex[1].tu      = 1.0f;
+	pVertex[1].tv      = 0.0f;
+
+	pVertex[2].x       = lWidth/2 - 0.5f;    // right
+	pVertex[2].y       = lHeight - 0.5f;   // bottom
+	pVertex[2].z       = 0.0f;
+	pVertex[2].diffuse = D3DCOLOR_ARGB(255, 255, 255, 255);
+	pVertex[2].rhw     = 1.0f;
+	pVertex[2].tu      = 1.0f;
+	pVertex[2].tv      = 1.0f;
+
+	pVertex[3].x       = -0.5f;       // left
+	pVertex[3].y       = lHeight - 0.5f;   // bottom
+	pVertex[3].z       = 0.0f;
+	pVertex[3].diffuse = D3DCOLOR_ARGB(255, 255, 255, 255);
+	pVertex[3].rhw     = 1.0f;
+	pVertex[3].tu      = 0.0f;
+	pVertex[3].tv      = 1.0f;
+
+	m_pDirect3DVertexBuffer->Unlock();
+	LeaveCriticalSection(&m_critial);
+	return S_OK;
+}
+
+
+bool Render()
+{
+	//Read Data
+	//RGB
+	if (fread(raw_buffer, 1, pixel_w*pixel_h*bpp/8, fp) != pixel_w*pixel_h*bpp/8){
+		// Loop
+		fseek(fp, 0, SEEK_SET);
+		fread(raw_buffer, 1, pixel_w*pixel_h*bpp/8, fp);
+	}
+	int iVideoPitch=pixel_w*bpp/8;
+
+	LRESULT lRet;
+	if(raw_buffer == NULL || m_pDirect3DDevice == NULL) 
+		return false;
+	HRESULT hr;
+	//前两个参数，设定所要清除一系列矩形的大小和地址。这些矩形描述了那些即将被清除的区域。
+	//Flags:
+	hr = m_pDirect3DDevice->Clear(0, NULL, D3DCLEAR_TARGET,
+		D3DCOLOR_XRGB(0, 0, 255), 1.0f, 0);
+	//Begin the scene
+	//开始渲染
+	if ( FAILED(m_pDirect3DDevice->BeginScene()) ){
+		return false;
+	}
+
+	lRet = m_pDirect3DDevice->SetTexture( 0, m_pDirect3DTexture );
+	D3DLOCKED_RECT d3dLock;
+	//LockRect()获得一个指向表面内存的指针，然后，通过一系列指针运算，我们可以
+	//对表面上任一个像素点进行读、写操作。
+	lRet = m_pDirect3DTexture->LockRect( 0, &d3dLock, 0, 0 );
+	if ( FAILED(lRet) ){
+		return false;
+	}
+	// 拷贝图像数据到纹理中
+	byte *pSrc = raw_buffer;
+	byte *pDest = (byte *)d3dLock.pBits;
+	for(unsigned long i=0; i< pixel_h; i++){
+		memcpy( pDest, pSrc, iVideoPitch );
+		//Pitch有可能比Width大且依赖于低层硬件
+		pDest += d3dLock.Pitch;
+		pSrc += iVideoPitch;
+	}
+
+	m_pDirect3DTexture->UnlockRect( 0 );
+
+	//把一个顶点缓存绑定到一个设备数据流，这样就在顶点数据和一个顶点数据流端口之间建立了联系。
+	m_pDirect3DDevice->SetStreamSource( 0, m_pDirect3DVertexBuffer,
+		0, sizeof(CUSTOMVERTEX) );
+	//
+	lRet = m_pDirect3DDevice->SetFVF( D3DFVF_CUSTOMVERTEX );
+	//对数据流中的数据的真正引用
+	m_pDirect3DDevice->DrawPrimitive( D3DPT_TRIANGLEFAN, 0, 2 );
+	m_pDirect3DDevice->EndScene();
+	//前两个参数分别代表了源矩形和目标矩形。
+	//第三个参数用来设置接受呈现的目标窗口。由于这个参数被设置为NULL，
+	//则会默认使用D3DPRESENT_PARAMETERS中的窗口。
+	m_pDirect3DDevice->Present( NULL, NULL, NULL, NULL );
+	return true;
+}
+
+
+LRESULT WINAPI MyWndProc(HWND hwnd, UINT msg, WPARAM wparma, LPARAM lparam)
+{
+	switch(msg){
+	case WM_DESTROY:
+		Cleanup();
+		PostQuitMessage(0);
+		return 0;
+	}
+
+	return DefWindowProc(hwnd, msg, wparma, lparam);
+}
+
+int WINAPI WinMain( __in HINSTANCE hInstance, __in_opt HINSTANCE hPrevInstance, __in LPSTR lpCmdLine, __in int nShowCmd )
+{
+	WNDCLASSEX wc;
+	ZeroMemory(&wc, sizeof(wc));
+
+	wc.cbSize = sizeof(wc);
+	wc.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
+	wc.lpfnWndProc = (WNDPROC)MyWndProc;
+	wc.lpszClassName = L"D3D";
+	wc.style = CS_HREDRAW | CS_VREDRAW;
+
+	RegisterClassEx(&wc);
+
+	HWND hwnd = NULL;
+	hwnd = CreateWindow(L"D3D", L"Simplest Video Play Direct3D", WS_OVERLAPPEDWINDOW, 100, 100, 500, 500, NULL, NULL, hInstance, NULL);
+	if (hwnd==NULL){
+		return -1;
+	}
+	
+	Init_Var();
+
+	if(InitD3D( hwnd, 320, 240)==E_FAIL){
+		return -1;
+	}
+
+	ShowWindow(hwnd, nShowCmd);
+	UpdateWindow(hwnd);
+	
+	if((fp=fopen("../test_32_320x240.rgb","rb+"))==NULL){
+		printf("cannot open video file.\n");
+		return -1;
+	}
+
+	MSG msg;
+	ZeroMemory(&msg, sizeof(msg));
+
+	while (msg.message != WM_QUIT){
+		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)){
+			TranslateMessage(&msg);
+			DispatchMessage(&msg);
+		}
+		else{
+			Sleep(10);
+			Render();
+		}
+	}
+
+
+	UnregisterClass(L"D3D", hInstance);
+	return 0;
+}
+
