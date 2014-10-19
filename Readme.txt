@@ -35,7 +35,7 @@ simplest_video_play_direct3d: 		Play RGB/YUV raw video data using Direct3D's Sur
 simplest_video_play_direct3d_texture:Play RGB raw video data using Direct3D's Texture.
 simplest_video_play_gdi: 			Play RGB/YUV raw video data using GDI.
 simplest_video_play_opengl: 		Play RGB/YUV raw video data using OpenGL.
-simplest_video_play_opengl_texture:	Play YUV raw video data using OpenGL.
+simplest_video_play_opengl_texture:	Play YUV raw video data using OpenGL's Texture.
 simplest_video_play_sdl2: 			Play RGB/YUV raw video data using SDL2.
 
 

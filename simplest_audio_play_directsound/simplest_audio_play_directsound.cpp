@@ -78,10 +78,10 @@ BOOL main(int argc,char * argv[])
 		return -1;
 	}
 
-	IDirectSound8 *m_pDS=0;					
+	IDirectSound8 *m_pDS=NULL;					
 	IDirectSoundBuffer8 *m_pDSBuffer8=NULL;	//used to manage sound buffers.
 	IDirectSoundBuffer *m_pDSBuffer=NULL;	
-	IDirectSoundNotify8 *m_pDSNotify=0;		
+	IDirectSoundNotify8 *m_pDSNotify=NULL;		
 	DSBPOSITIONNOTIFY m_pDSPosNotify[MAX_AUDIO_BUF];
 	HANDLE m_event[MAX_AUDIO_BUF];
 
@@ -98,6 +98,7 @@ BOOL main(int argc,char * argv[])
 	dsbd.dwSize=sizeof(dsbd);
 	dsbd.dwFlags=DSBCAPS_GLOBALFOCUS | DSBCAPS_CTRLPOSITIONNOTIFY |DSBCAPS_GETCURRENTPOSITION2;
 	dsbd.dwBufferBytes=MAX_AUDIO_BUF*BUFFERNOTIFYSIZE; 
+	//WAVE Header
 	dsbd.lpwfxFormat=(WAVEFORMATEX*)malloc(sizeof(WAVEFORMATEX));
 	dsbd.lpwfxFormat->wFormatTag=WAVE_FORMAT_PCM;   
 	/* format type */
