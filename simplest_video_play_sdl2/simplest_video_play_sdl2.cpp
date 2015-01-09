@@ -12,18 +12,18 @@
  * API（Direct3D，OpenGL）的封装，使用起来明显简单于直接调用底层
  * API。
  *
- * 函数调用步骤如下：
+ * 函数调用步骤如下: 
  *
  * [初始化]
- * SDL_Init()：初始化SDL。
- * SDL_CreateWindow()：创建窗口（Window）。
- * SDL_CreateRenderer()：基于窗口创建渲染器（Render）。
- * SDL_CreateTexture()：创建纹理（Texture）。
+ * SDL_Init(): 初始化SDL。
+ * SDL_CreateWindow(): 创建窗口（Window）。
+ * SDL_CreateRenderer(): 基于窗口创建渲染器（Render）。
+ * SDL_CreateTexture(): 创建纹理（Texture）。
  *
  * [循环渲染数据]
- * SDL_UpdateTexture()：设置纹理的数据。
- * SDL_RenderCopy()：纹理复制给渲染器。
- * SDL_RenderPresent()：显示。
+ * SDL_UpdateTexture(): 设置纹理的数据。
+ * SDL_RenderCopy(): 纹理复制给渲染器。
+ * SDL_RenderPresent(): 显示。
  *
  * This software plays RGB/YUV raw video data using SDL2.
  * SDL is a wrapper of low-level API (Direct3D, OpenGL).
@@ -56,8 +56,6 @@ extern "C"
 #define LOAD_BGR24   0
 #define LOAD_YUV420P 0
 
-#define HAS_BORDER	 1
-
 //Bit per Pixel
 #if LOAD_BGRA
 const int bpp=32;
@@ -67,7 +65,7 @@ const int bpp=24;
 const int bpp=12;
 #endif
 
-const int screen_w=500,screen_h=500;
+int screen_w=500,screen_h=500;
 const int pixel_w=320,pixel_h=180;
 
 unsigned char buffer[pixel_w*pixel_h*bpp/8];
@@ -123,7 +121,7 @@ int main(int argc, char* argv[])
 	SDL_Window *screen; 
 	//SDL 2.0 Support for multiple windows
 	screen = SDL_CreateWindow("Simplest Video Play SDL2", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
-		screen_w, screen_h,SDL_WINDOW_OPENGL);
+		screen_w, screen_h,SDL_WINDOW_OPENGL|SDL_WINDOW_RESIZABLE);
 	if(!screen) {  
 		printf("SDL: could not create window - exiting:%s\n",SDL_GetError());  
 		return -1;
@@ -146,16 +144,7 @@ int main(int argc, char* argv[])
 
 	SDL_Texture* sdlTexture = SDL_CreateTexture(sdlRenderer,pixformat, SDL_TEXTUREACCESS_STREAMING,pixel_w,pixel_h);
 
-	int border=0;
-	//Make picture smaller, Add a "border"
-#if HAS_BORDER
-	border=30;
-#endif
-	SDL_Rect sdlRect;  
-	sdlRect.x = 0+border;  
-	sdlRect.y = 0+border;  
-	sdlRect.w = screen_w-border*2;  
-	sdlRect.h = screen_h-border*2;  
+
 
 	FILE *fp=NULL;
 #if LOAD_BGRA
@@ -171,6 +160,8 @@ int main(int argc, char* argv[])
 		printf("cannot open this file\n");
 		return -1;
 	}
+
+	SDL_Rect sdlRect;  
 
 	SDL_Thread *refresh_thread = SDL_CreateThread(refresh_video,NULL,NULL);
 	SDL_Event event;
@@ -196,6 +187,11 @@ int main(int argc, char* argv[])
 #elif LOAD_YUV420P
 			SDL_UpdateTexture( sdlTexture, NULL, buffer, pixel_w);  
 #endif
+			//FIX: If window is resize
+			sdlRect.x = 0;  
+			sdlRect.y = 0;  
+			sdlRect.w = screen_w;  
+			sdlRect.h = screen_h;  
 			
 			SDL_RenderClear( sdlRenderer );   
 			SDL_RenderCopy( sdlRenderer, sdlTexture, NULL, &sdlRect);  
@@ -203,6 +199,9 @@ int main(int argc, char* argv[])
 			//Delay 40ms
 			SDL_Delay(40);
 			
+		}else if(event.type==SDL_WINDOWEVENT){
+			//If Resize
+			SDL_GetWindowSize(screen,&screen_w,&screen_h);
 		}else if(event.type==SDL_QUIT){
 			break;
 		}

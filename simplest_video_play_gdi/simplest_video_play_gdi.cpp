@@ -11,12 +11,12 @@
  * 本程序使用GDI播放RGB/YUV视频像素数据。GDI实际上只能直接播放RGB数据。
  * 因此如果输入数据为YUV420P的话，需要先转换为RGB数据之后再进行播放。
  * 
- * 函数调用步骤如下：
- * GetDC()：获得显示设备的句柄。
+ * 函数调用步骤如下: 
+ * GetDC(): 获得显示设备的句柄。
  * 像素数据格式的转换（如果需要的话）
  * 设置BMP文件头...
- * StretchDIBits()：指定BMP文件头，以及像素数据，绘制。
- * ReleaseDC()：释放显示设备的句柄。
+ * StretchDIBits(): 指定BMP文件头，以及像素数据，绘制。
+ * ReleaseDC(): 释放显示设备的句柄。
  *
  * 在该示例程序中，包含了像素转换的几个工具函数，以及“大端”，
  * “小端”（字节顺序）相互转换的函数。
@@ -28,11 +28,11 @@
  *
  * The process is shown as follows:
  *
- * GetDC()：retrieves a handle to a device context (DC).
+ * GetDC(): retrieves a handle to a device context (DC).
  * Convert pixel data format(if needed).
  * Set BMP Header...
- * StretchDIBits()：Set pixel data and BMP data and begin to draw.
- * ReleaseDC()：release the handle.
+ * StretchDIBits(): Set pixel data and BMP data and begin to draw.
+ * ReleaseDC(): release the handle.
  *
  * In this program there are some functions about conversion
  * between pixel format and conversion between "Big Endian" and 
@@ -44,13 +44,13 @@
 #include <Windows.h>
 
 //set '1' to choose a type of file to play
-#define LOAD_BGRA    1
-#define LOAD_RGB24   0
+#define LOAD_BGRA    0
+#define LOAD_RGB24   1
 #define LOAD_BGR24   0
 #define LOAD_YUV420P 0
 
 //Width, Height
-const int screen_w=500,screen_h=500;
+int screen_w=500,screen_h=500;
 const int pixel_w=320,pixel_h=180;
 
 //Bit per Pixel
@@ -222,6 +222,11 @@ bool Render(HWND hwnd)
 	//Change to Little Endian
 	CHANGE_ENDIAN_PIC(buffer_convert,pixel_w,pixel_h,24);
 #endif
+	//FIX: if Change Window Size
+	RECT rect;
+	GetWindowRect(hwnd,&rect);
+	screen_w=rect.right-rect.left;
+	screen_h=rect.bottom-rect.top;
 
 	//BMP Header
 	BITMAPINFO m_bmphdr={0};
@@ -296,7 +301,7 @@ int WINAPI WinMain( __in HINSTANCE hInstance, __in_opt HINSTANCE hPrevInstance, 
 	RegisterClassEx(&wc);
 
 	HWND hwnd = NULL;
-	hwnd = CreateWindow(_T("GDI"), _T("Simplest Video Play GDI"), WS_OVERLAPPEDWINDOW, 100, 100, 500, 500, NULL, NULL, hInstance, NULL);
+	hwnd = CreateWindow(_T("GDI"), _T("Simplest Video Play GDI"), WS_OVERLAPPEDWINDOW, 100, 100, screen_w, screen_h, NULL, NULL, hInstance, NULL);
 	if (hwnd==NULL){
 		return -1;
 	}
@@ -322,7 +327,7 @@ int WINAPI WinMain( __in HINSTANCE hInstance, __in_opt HINSTANCE hPrevInstance, 
 	ZeroMemory(&msg, sizeof(msg));
 
 	while (msg.message != WM_QUIT){
-		//PeekMessage不同于GetMessage，是非阻塞函数。
+		//PeekMessage() is not same as GetMessage
 		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)){
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);

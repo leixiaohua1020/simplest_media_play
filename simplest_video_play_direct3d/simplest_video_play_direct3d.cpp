@@ -11,22 +11,22 @@
  * 本程序使用Direct3D播放RGB/YUV视频像素数据。使用D3D中的Surface渲染数据。
  * 使用Surface渲染视频相对于另一种方法（使用Texture）来说，更加简单，适合
  * 新手学习。
- * 函数调用步骤如下：
+ * 函数调用步骤如下: 
  *
  * [初始化]
- * Direct3DCreate9()：获得IDirect3D9
- * IDirect3D9->CreateDevice()：通过IDirect3D9创建Device（设备）。
- * IDirect3DDevice9->CreateOffscreenPlainSurface()：通过Device创建一个Surface（离屏表面）。
+ * Direct3DCreate9(): 获得IDirect3D9
+ * IDirect3D9->CreateDevice(): 通过IDirect3D9创建Device（设备）。
+ * IDirect3DDevice9->CreateOffscreenPlainSurface(): 通过Device创建一个Surface（离屏表面）。
  *
  * [循环渲染数据]
- * IDirect3DSurface9->LockRect()：锁定离屏表面。
- * memcpy()：填充数据
- * IDirect3DSurface9->UnLockRect()：解锁离屏表面。
- * IDirect3DDevice9->BeginScene()：开始绘制。
- * IDirect3DDevice9->GetBackBuffer()：获得后备缓冲。
- * IDirect3DDevice9->StretchRect()：拷贝Surface数据至后备缓冲。
- * IDirect3DDevice9->EndScene()：结束绘制。
- * IDirect3DDevice9->Present()：显示出来。
+ * IDirect3DSurface9->LockRect(): 锁定离屏表面。
+ * memcpy(): 填充数据
+ * IDirect3DSurface9->UnLockRect(): 解锁离屏表面。
+ * IDirect3DDevice9->BeginScene(): 开始绘制。
+ * IDirect3DDevice9->GetBackBuffer(): 获得后备缓冲。
+ * IDirect3DDevice9->StretchRect(): 拷贝Surface数据至后备缓冲。
+ * IDirect3DDevice9->EndScene(): 结束绘制。
+ * IDirect3DDevice9->Present(): 显示出来。
  *
  * This software play RGB/YUV raw video data using Direct3D. It uses Surface 
  * in D3D to render the pixel data. Compared to another method (use Texture), 
@@ -202,7 +202,7 @@ bool Render()
 	m_pDirect3DDevice->StretchRect(m_pDirect3DSurfaceRender,NULL,pBackBuffer,&m_rtViewport,D3DTEXF_LINEAR);
 	m_pDirect3DDevice->EndScene();
 	m_pDirect3DDevice->Present( NULL, NULL, NULL, NULL );
-	
+	pBackBuffer->Release();
 
 	return true;
 }
@@ -233,7 +233,7 @@ int WINAPI WinMain( __in HINSTANCE hInstance, __in_opt HINSTANCE hPrevInstance, 
 	RegisterClassEx(&wc);
 
 	HWND hwnd = NULL;
-	hwnd = CreateWindow(L"D3D", L"Simplest Video Play Direct3D (Surface)", WS_OVERLAPPEDWINDOW, 100, 100, 500, 500, NULL, NULL, hInstance, NULL);
+	hwnd = CreateWindow(L"D3D", L"Simplest Video Play Direct3D (Surface)", WS_OVERLAPPEDWINDOW, 100, 100, screen_w, screen_h, NULL, NULL, hInstance, NULL);
 	if (hwnd==NULL){
 		return -1;
 	}

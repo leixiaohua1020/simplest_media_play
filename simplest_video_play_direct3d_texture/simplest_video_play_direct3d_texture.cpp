@@ -12,28 +12,28 @@
  * 相对于使用Surface渲染视频数据来说，使用Texture渲染视频数据功能更加灵活，
  * 但是学习起来也会相对复杂一些。
  *
- * 函数调用步骤如下：
+ * 函数调用步骤如下: 
  *
  * [初始化]
- * Direct3DCreate9()：获得IDirect3D9
- * IDirect3D9->CreateDevice()：通过IDirect3D9创建Device（设备）
- * IDirect3DDevice9->CreateTexture()：通过Device创建一个Texture（纹理）。
- * IDirect3DDevice9->CreateVertexBuffer()：通过Device创建一个VertexBuffer（顶点缓存）。
- * IDirect3DVertexBuffer9->Lock()：锁定顶点缓存。
- * memcpy()：填充顶点缓存。
- * IDirect3DVertexBuffer9->Unlock()：解锁顶点缓存。
+ * Direct3DCreate9(): 获得IDirect3D9
+ * IDirect3D9->CreateDevice(): 通过IDirect3D9创建Device（设备）
+ * IDirect3DDevice9->CreateTexture(): 通过Device创建一个Texture（纹理）。
+ * IDirect3DDevice9->CreateVertexBuffer(): 通过Device创建一个VertexBuffer（顶点缓存）。
+ * IDirect3DVertexBuffer9->Lock(): 锁定顶点缓存。
+ * memcpy(): 填充顶点缓存。
+ * IDirect3DVertexBuffer9->Unlock(): 解锁顶点缓存。
  *
  * [循环渲染数据]
- * IDirect3DTexture9->LockRect()：锁定纹理。
- * memcpy()：填充纹理数据
- * IDirect3DTexture9->UnLockRect()：解锁纹理。
- * IDirect3DDevice9->BeginScene()：开始绘制。
- * IDirect3DDevice9->SetTexture()：设置当前要渲染的纹理。
- * IDirect3DDevice9->SetStreamSource()：绑定VertexBuffer。
- * IDirect3DDevice9->SetFVF()：设置Vertex格式。
- * IDirect3DDevice9->DrawPrimitive()：渲染。
- * IDirect3DDevice9->EndScene()：结束绘制。
- * IDirect3DDevice9->Present()：显示出来。
+ * IDirect3DTexture9->LockRect(): 锁定纹理。
+ * memcpy(): 填充纹理数据
+ * IDirect3DTexture9->UnLockRect(): 解锁纹理。
+ * IDirect3DDevice9->BeginScene(): 开始绘制。
+ * IDirect3DDevice9->SetTexture(): 设置当前要渲染的纹理。
+ * IDirect3DDevice9->SetStreamSource(): 绑定VertexBuffer。
+ * IDirect3DDevice9->SetFVF(): 设置Vertex格式。
+ * IDirect3DDevice9->DrawPrimitive(): 渲染。
+ * IDirect3DDevice9->EndScene(): 结束绘制。
+ * IDirect3DDevice9->Present(): 显示出来。
  *
  * This software plays RGB/YUV raw video data using Direct3D.
  * It uses Texture in D3D to render the pixel data.
@@ -43,25 +43,25 @@
  * The process is shown as follows:
  *
  * [Init]
- * Direct3DCreate9()：Get IDirect3D9.
- * IDirect3D9->CreateDevice()：Create a Device.
- * IDirect3DDevice9->CreateTexture()：Create a Texture.
- * IDirect3DDevice9->CreateVertexBuffer()：Create a VertexBuffer.
- * IDirect3DVertexBuffer9->Lock()：Lock VertexBuffer.
- * memcpy()：Fill VertexBuffer.
- * IDirect3DVertexBuffer9->Unlock()：UnLock VertexBuffer.
+ * Direct3DCreate9(): Get IDirect3D9.
+ * IDirect3D9->CreateDevice(): Create a Device.
+ * IDirect3DDevice9->CreateTexture(): Create a Texture.
+ * IDirect3DDevice9->CreateVertexBuffer(): Create a VertexBuffer.
+ * IDirect3DVertexBuffer9->Lock(): Lock VertexBuffer.
+ * memcpy(): Fill VertexBuffer.
+ * IDirect3DVertexBuffer9->Unlock(): UnLock VertexBuffer.
  *
  * [Loop to Render data]
- * IDirect3DTexture9->LockRect()：Lock Texture.
- * memcpy()：Fill pixel data...
- * IDirect3DTexture9->UnLockRect()：UnLock Texture.
- * IDirect3DDevice9->BeginScene()：Begin to draw.
- * IDirect3DDevice9->SetTexture()：Set current Texture.
- * IDirect3DDevice9->SetStreamSource()：Bind VertexBuffer.
- * IDirect3DDevice9->SetFVF()：Set Vertex Format.
- * IDirect3DDevice9->DrawPrimitive()：Render.
- * IDirect3DDevice9->EndScene()：End drawing.
- * IDirect3DDevice9->Present()：Show on the screen.
+ * IDirect3DTexture9->LockRect(): Lock Texture.
+ * memcpy(): Fill pixel data...
+ * IDirect3DTexture9->UnLockRect(): UnLock Texture.
+ * IDirect3DDevice9->BeginScene(): Begin to draw.
+ * IDirect3DDevice9->SetTexture(): Set current Texture.
+ * IDirect3DDevice9->SetStreamSource(): Bind VertexBuffer.
+ * IDirect3DDevice9->SetFVF(): Set Vertex Format.
+ * IDirect3DDevice9->DrawPrimitive(): Render.
+ * IDirect3DDevice9->EndScene(): End drawing.
+ * IDirect3DDevice9->Present(): Show on the screen.
  */
 
 #include <stdio.h>
@@ -71,10 +71,10 @@
 //Flexible Vertex Format, FVF
 typedef struct
 {
-	FLOAT       x,y,z;      // vertex untransformed position
-	FLOAT       rhw;        // eye distance
-	D3DCOLOR    diffuse;    // diffuse color
-	FLOAT       tu, tv;     // texture relative coordinates
+	FLOAT       x,y,z;      
+	FLOAT       rhw;        
+	D3DCOLOR    diffuse;    
+	FLOAT       tu, tv;     
 } CUSTOMVERTEX;
 
 CRITICAL_SECTION  m_critial;
@@ -90,9 +90,9 @@ IDirect3DVertexBuffer9 *m_pDirect3DVertexBuffer= NULL;
 
 
 //Select one of the Texture mode (Set '1'):
-#define TEXTURE_DEFAULT 1
+#define TEXTURE_DEFAULT 0
 //Rotate the texture
-#define TEXTURE_ROTATE  0
+#define TEXTURE_ROTATE  1
 //Show half of the Texture
 #define TEXTURE_HALF    0
 
@@ -127,6 +127,7 @@ int InitD3D( HWND hwnd, unsigned long lWidth, unsigned long lHeight )
 	InitializeCriticalSection(&m_critial);
 
 	Cleanup();
+
 	EnterCriticalSection(&m_critial);
 	// Create IDirect3D
 	m_pDirect3D9 = Direct3DCreate9( D3D_SDK_VERSION );
@@ -182,10 +183,10 @@ int InitD3D( HWND hwnd, unsigned long lWidth, unsigned long lHeight )
 	//Creates a device to represent the display adapter.
 	//Adapter:		Ordinal number that denotes the display adapter. D3DADAPTER_DEFAULT is always the primary display 
 	//D3DDEVTYPE:	D3DDEVTYPE_HAL((Hardware Accelerator), or D3DDEVTYPE_SW(SoftWare)
-	//BehaviorFlags：D3DCREATE_SOFTWARE_VERTEXPROCESSING, or D3DCREATE_HARDWARE_VERTEXPROCESSING
+	//BehaviorFlags: D3DCREATE_SOFTWARE_VERTEXPROCESSING, or D3DCREATE_HARDWARE_VERTEXPROCESSING
 	lRet = m_pDirect3D9->CreateDevice( D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, NULL,
 		D3DCREATE_SOFTWARE_VERTEXPROCESSING|D3DCREATE_MULTITHREADED, &d3dpp, &m_pDirect3DDevice );
-	
+
 	/*
 	//Set some property
 	//SetSamplerState()
@@ -252,28 +253,27 @@ int InitD3D( HWND hwnd, unsigned long lWidth, unsigned long lHeight )
 		return -1;
 	}
 
-	/* -0.5f is a "feature" of DirectX and it seems to apply to Direct3d also */
 #if TEXTURE_HALF
 	CUSTOMVERTEX vertices[] ={
-		{-0.5f,			-0.5f,			0.0f,	1.0f,D3DCOLOR_ARGB(255, 255, 255, 255),0.0f,0.0f},
-		{lWidth-0.5f,	-0.5f,			0.0f,	1.0f,D3DCOLOR_ARGB(255, 255, 255, 255),0.5f,0.0f},
-		{lWidth - 0.5f,	lHeight-0.5f,	0.0f,	1.0f,D3DCOLOR_ARGB(255, 255, 255, 255),0.5f,1.0f},
-		{-0.5f,			lHeight-0.5f,	0.0f,	1.0f,D3DCOLOR_ARGB(255, 255, 255, 255),0.0f,1.0f}
+		{0.0f,		0.0f,		0.0f,	1.0f,D3DCOLOR_ARGB(255, 255, 255, 255),0.0f,0.0f},
+		{lWidth,	0.0f,		0.0f,	1.0f,D3DCOLOR_ARGB(255, 255, 255, 255),0.5f,0.0f},
+		{lWidth,	lHeight,	0.0f,	1.0f,D3DCOLOR_ARGB(255, 255, 255, 255),0.5f,1.0f},
+		{0.0f,		lHeight,	0.0f,	1.0f,D3DCOLOR_ARGB(255, 255, 255, 255),0.0f,1.0f}
 	};
 #elif TEXTURE_ROTATE
 	//Rotate Texture?
 	CUSTOMVERTEX vertices[] ={
-		{lWidth/4-0.5f,		-0.5f,			0.0f,	1.0f,D3DCOLOR_ARGB(255, 255, 255, 255),0.0f,0.0f},
-		{lWidth-0.5f,		lHeight/4-0.5f,	0.0f,	1.0f,D3DCOLOR_ARGB(255, 255, 255, 255),1.0f,0.0f},
-		{lWidth*3/4-0.5f,	lHeight-0.5f,	0.0f,	1.0f,D3DCOLOR_ARGB(255, 255, 255, 255),1.0f,1.0f},
-		{-0.5f,				lHeight*3/4-0.5f,0.0f,	1.0f,D3DCOLOR_ARGB(255, 255, 255, 255),0.0f,1.0f}
+		{lWidth/4,		0.0f,		0.0f,	1.0f,D3DCOLOR_ARGB(255, 255, 255, 255),0.0f,0.0f},
+		{lWidth,		lHeight/4,	0.0f,	1.0f,D3DCOLOR_ARGB(255, 255, 255, 255),1.0f,0.0f},
+		{lWidth*3/4,	lHeight,	0.0f,	1.0f,D3DCOLOR_ARGB(255, 255, 255, 255),1.0f,1.0f},
+		{0.0f,			lHeight*3/4,0.0f,	1.0f,D3DCOLOR_ARGB(255, 255, 255, 255),0.0f,1.0f}
 	};
 #else
 	CUSTOMVERTEX vertices[] ={
-		{-0.5f,			-0.5f,			0.0f,	1.0f,D3DCOLOR_ARGB(255, 255, 255, 255),0.0f,0.0f},
-		{lWidth-0.5f,	-0.5f,			0.0f,	1.0f,D3DCOLOR_ARGB(255, 255, 255, 255),1.0f,0.0f},
-		{lWidth - 0.5f,	lHeight-0.5f,	0.0f,	1.0f,D3DCOLOR_ARGB(255, 255, 255, 255),1.0f,1.0f},
-		{-0.5f,			lHeight-0.5f,	0.0f,	1.0f,D3DCOLOR_ARGB(255, 255, 255, 255),0.0f,1.0f}
+		{0.0f,		0.0f,		0.0f,	1.0f,D3DCOLOR_ARGB(255, 255, 255, 255),0.0f,0.0f},
+		{lWidth,	0.0f,		0.0f,	1.0f,D3DCOLOR_ARGB(255, 255, 255, 255),1.0f,0.0f},
+		{lWidth,	lHeight,	0.0f,	1.0f,D3DCOLOR_ARGB(255, 255, 255, 255),1.0f,1.0f},
+		{0.0f,		lHeight,	0.0f,	1.0f,D3DCOLOR_ARGB(255, 255, 255, 255),0.0f,1.0f}
 	};
 #endif
 
@@ -309,7 +309,7 @@ bool Render()
 	//Clears one or more surfaces
 	lRet = m_pDirect3DDevice->Clear(0, NULL, D3DCLEAR_TARGET,
 		D3DCOLOR_XRGB(0, 255, 0), 1.0f, 0);
-	
+
 	D3DLOCKED_RECT d3d_rect;
 	//Locks a rectangle on a texture resource.
 	//And then we can manipulate pixel data in it.
@@ -321,8 +321,6 @@ bool Render()
 	byte *pSrc = buffer;
 	byte *pDest = (byte *)d3d_rect.pBits;
 	int stride = d3d_rect.Pitch;
-	unsigned long i = 0;
-
 
 	int pixel_w_size=pixel_w*bpp/8;
 	for(unsigned long i=0; i< pixel_h; i++){
@@ -382,7 +380,7 @@ int WINAPI WinMain( __in HINSTANCE hInstance, __in_opt HINSTANCE hPrevInstance, 
 	RegisterClassEx(&wc);
 
 	HWND hwnd = NULL;
-	hwnd = CreateWindow(L"D3D", L"Simplest Video Play Direct3D (Texture)", WS_OVERLAPPEDWINDOW, 100, 100, 500, 500, NULL, NULL, hInstance, NULL);
+	hwnd = CreateWindow(L"D3D", L"Simplest Video Play Direct3D (Texture)", WS_OVERLAPPEDWINDOW, 100, 100, screen_w, screen_h, NULL, NULL, hInstance, NULL);
 	if (hwnd==NULL){
 		return -1;
 	}

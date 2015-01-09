@@ -13,20 +13,20 @@
  * 数据的话，需要先转换为RGB数据之后再进行播放。
  * 本程序是最简单的使用OpenGL播放像素数据的例子，适合OpenGL新手学习。
  *
- * 函数调用步骤如下：
+ * 函数调用步骤如下: 
  *
  * [初始化]
- * glutInit()：初始化glut库。
- * glutInitDisplayMode()：设置显示模式。
- * glutCreateWindow()：创建一个窗口。
- * glutDisplayFunc()：设置绘图函数（重绘的时候调用）。
- * glutTimerFunc()：设置定时器。
- * glutMainLoop()：进入消息循环。
+ * glutInit(): 初始化glut库。
+ * glutInitDisplayMode(): 设置显示模式。
+ * glutCreateWindow(): 创建一个窗口。
+ * glutDisplayFunc(): 设置绘图函数（重绘的时候调用）。
+ * glutTimerFunc(): 设置定时器。
+ * glutMainLoop(): 进入消息循环。
  *
  * [循环渲染数据]
- * glRasterPos3f(),glPixelZoom()：调整显示位置，图像大小。
- * glDrawPixels()：绘制。
- * glutSwapBuffers()：显示。
+ * glRasterPos3f(),glPixelZoom(): 调整显示位置，图像大小。
+ * glDrawPixels(): 绘制。
+ * glutSwapBuffers(): 显示。
  *
  * This software plays RGB/YUV raw video data using OpenGL. This
  * software support show RGB (RGB24, BGR24, BGRA) data on the screen.
@@ -37,7 +37,7 @@
  * The process is shown as follows:
  *
  * [Init]
- * glutInit()：Init glut library.
+ * glutInit(): Init glut library.
  * glutInitDisplayMode(): Set display mode.
  * glutCreateWindow(): Create a window.
  * glutDisplayFunc(): Set the display callback.
@@ -153,8 +153,9 @@ void display(void){
 	//Move to(-1.0,1.0)
 	glRasterPos3f(-1.0f,1.0f,0);
 	//Zoom, Flip
-	glPixelZoom((float)screen_w/(float)pixel_w, -(float)screen_h/pixel_h);
+	glPixelZoom((float)screen_w/(float)pixel_w, -(float)screen_h/(float)pixel_h);
 	
+
 
 #if LOAD_BGRA
 	glDrawPixels(pixel_w, pixel_h,GL_BGRA, GL_UNSIGNED_BYTE, buffer);
@@ -178,6 +179,7 @@ void timeFunc(int value){
     // Present frame every 40 ms
     glutTimerFunc(40, timeFunc, 0);
 }
+
 
 
 int main(int argc, char* argv[])

@@ -1,0 +1,8 @@
+更新日志
+ChangeLog
+
+1.1:
+
+1.修改了各个子程序中的CreateWindow()函数中窗口的宽高设置。不再是固定的500x500，而是由screen_w，screen_h决定。
+2.修改了Simplest_video_play_direct3d_texture中的纹理映射坐标，使之更易理解。
+3.各个项目窗口大小都变成了可以调整的

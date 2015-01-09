@@ -11,18 +11,18 @@
  API（Direct3D，OpenGL）的封装，使用起来明显简单于直接调用底层
  API。
 
- 函数调用步骤如下：
+ 函数调用步骤如下: 
 
  [初始化]
- SDL_Init()：初始化SDL。
- SDL_CreateWindow()：创建窗口（Window）。
- SDL_CreateRenderer()：基于窗口创建渲染器（Render）。
- SDL_CreateTexture()：创建纹理（Texture）。
+ SDL_Init(): 初始化SDL。
+ SDL_CreateWindow(): 创建窗口（Window）。
+ SDL_CreateRenderer(): 基于窗口创建渲染器（Render）。
+ SDL_CreateTexture(): 创建纹理（Texture）。
 
  [循环渲染数据]
- SDL_UpdateTexture()：设置纹理的数据。
- SDL_RenderCopy()：纹理复制给渲染器。
- SDL_RenderPresent()：显示。
+ SDL_UpdateTexture(): 设置纹理的数据。
+ SDL_RenderCopy(): 纹理复制给渲染器。
+ SDL_RenderPresent(): 显示。
 
 
  This software plays RGB/YUV raw video data using SDL2.

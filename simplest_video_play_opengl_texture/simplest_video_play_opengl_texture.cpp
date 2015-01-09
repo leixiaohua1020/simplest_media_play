@@ -13,25 +13,25 @@
  * 技术，例如Texture，Shader等，是一个相对比较复杂的例子。
  * 适合有一定OpenGL基础的初学者学习。
  *
- * 函数调用步骤如下：
+ * 函数调用步骤如下: 
  *
  * [初始化]
- * glutInit()：初始化glut库。
- * glutInitDisplayMode()：设置显示模式。
- * glutCreateWindow()：创建一个窗口。
- * glewInit()：初始化glew库。
- * glutDisplayFunc()：设置绘图函数（重绘的时候调用）。
- * glutTimerFunc()：设置定时器。
- * InitShaders()：设置Shader。包含了一系列函数，暂不列出。
- * glutMainLoop()：进入消息循环。
+ * glutInit(): 初始化glut库。
+ * glutInitDisplayMode(): 设置显示模式。
+ * glutCreateWindow(): 创建一个窗口。
+ * glewInit(): 初始化glew库。
+ * glutDisplayFunc(): 设置绘图函数（重绘的时候调用）。
+ * glutTimerFunc(): 设置定时器。
+ * InitShaders(): 设置Shader。包含了一系列函数，暂不列出。
+ * glutMainLoop(): 进入消息循环。
  *
  * [循环渲染数据]
- * glActiveTexture()：
- * glBindTexture()：
- * glTexImage2D()：
- * glUniform1i()：
- * glDrawArrays():绘制。
- * glutSwapBuffers()：显示。
+ * glActiveTexture(): 激活纹理单位。
+ * glBindTexture(): 绑定纹理
+ * glTexImage2D(): 根据像素数据，生成一个2D纹理。
+ * glUniform1i(): 
+ * glDrawArrays(): 绘制。
+ * glutSwapBuffers(): 显示。
  *
  * This software plays YUV raw video data using OpenGL.
  * It support read YUV420P raw file and show it on the screen.
@@ -52,9 +52,9 @@
  * glutMainLoop(): Start message loop.
  *
  * [Loop to Render data]
- * glActiveTexture(): Active a Texture
+ * glActiveTexture(): Active a Texture unit 
  * glBindTexture(): Bind Texture
- * glTexImage2D(): 
+ * glTexImage2D(): Specify pixel data to generate 2D Texture
  * glUniform1i(): 
  * glDrawArrays(): draw.
  * glutSwapBuffers(): show.
@@ -71,7 +71,7 @@
 #include <string.h>
 
 //Select one of the Texture mode (Set '1'):
-#define TEXTURE_DEFAULT   1
+#define TEXTURE_DEFAULT   0
 //Rotate the texture
 #define TEXTURE_ROTATE    0
 //Show half of the Texture

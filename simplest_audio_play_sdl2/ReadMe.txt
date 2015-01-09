@@ -11,15 +11,15 @@
  API（Direct3D，OpenGL）的封装，使用起来明显简单于直接调用底层
  API。
 
- 函数调用步骤如下：
+ 函数调用步骤如下: 
 
  [初始化]
- SDL_Init()：初始化SDL。
- SDL_OpenAudio()：根据参数（存储于SDL_AudioSpec）打开音频设备。
+ SDL_Init(): 初始化SDL。
+ SDL_OpenAudio(): 根据参数（存储于SDL_AudioSpec）打开音频设备。
 
  [循环播放数据]
- SDL_PauseAudio()：播放音频数据。
- SDL_Delay()：延时等待播放完成。
+ SDL_PauseAudio(): 播放音频数据。
+ SDL_Delay(): 延时等待播放完成。
 
  This software plays PCM raw audio data using SDL2.
  SDL is a wrapper of low-level API (DirectSound).
