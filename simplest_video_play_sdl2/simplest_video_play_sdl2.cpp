@@ -98,16 +98,24 @@ void CONVERT_24to32(unsigned char *image_in,unsigned char *image_out,int w,int h
 
 //Refresh Event
 #define REFRESH_EVENT  (SDL_USEREVENT + 1)
+//Break
+#define BREAK_EVENT  (SDL_USEREVENT + 2)
 
 int thread_exit=0;
 
 int refresh_video(void *opaque){
-	while (thread_exit==0) {
+	thread_exit=0;
+	while (!thread_exit) {
 		SDL_Event event;
 		event.type = REFRESH_EVENT;
 		SDL_PushEvent(&event);
 		SDL_Delay(40);
 	}
+	thread_exit=0;
+	//Break
+	SDL_Event event;
+	event.type = BREAK_EVENT;
+	SDL_PushEvent(&event);
 	return 0;
 }
 
@@ -143,8 +151,6 @@ int main(int argc, char* argv[])
 #endif
 
 	SDL_Texture* sdlTexture = SDL_CreateTexture(sdlRenderer,pixformat, SDL_TEXTUREACCESS_STREAMING,pixel_w,pixel_h);
-
-
 
 	FILE *fp=NULL;
 #if LOAD_BGRA
@@ -196,16 +202,17 @@ int main(int argc, char* argv[])
 			SDL_RenderClear( sdlRenderer );   
 			SDL_RenderCopy( sdlRenderer, sdlTexture, NULL, &sdlRect);  
 			SDL_RenderPresent( sdlRenderer );  
-			//Delay 40ms
-			SDL_Delay(40);
 			
 		}else if(event.type==SDL_WINDOWEVENT){
 			//If Resize
 			SDL_GetWindowSize(screen,&screen_w,&screen_h);
 		}else if(event.type==SDL_QUIT){
+			thread_exit=1;
+		}else if(event.type==BREAK_EVENT){
 			break;
 		}
 	}
-
+	SDL_Quit();
+	
 	return 0;
 }

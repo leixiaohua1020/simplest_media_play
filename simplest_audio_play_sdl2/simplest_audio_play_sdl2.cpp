@@ -121,6 +121,8 @@ int main(int argc, char* argv[])
 		while(audio_len>0)//Wait until finish
 			SDL_Delay(1); 
 	}
+	free(pcm_buffer);
+	SDL_Quit();
 
 	return 0;
 }
