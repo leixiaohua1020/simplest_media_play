@@ -17,9 +17,9 @@
  * [初始化]
  * SDL_Init(): 初始化SDL。
  * SDL_OpenAudio(): 根据参数（存储于SDL_AudioSpec）打开音频设备。
+ * SDL_PauseAudio(): 播放音频数据。
  *
  * [循环播放数据]
- * SDL_PauseAudio(): 播放音频数据。
  * SDL_Delay(): 延时等待播放完成。
  *
  * This software plays PCM raw audio data using SDL2.
@@ -32,9 +32,9 @@
  * SDL_Init(): Init SDL.
  * SDL_OpenAudio(): Opens the audio device with the desired 
  *					parameters (In SDL_AudioSpec).
+ * SDL_PauseAudio(): Play Audio.
  *
  * [Loop to play data]
- * SDL_PauseAudio(): Play Audio.
  * SDL_Delay(): Wait for completetion of playback.
  */
 
@@ -62,9 +62,9 @@ static  Uint8  *audio_pos;
 void  fill_audio(void *udata,Uint8 *stream,int len){ 
 	//SDL 2.0
 	SDL_memset(stream, 0, len);
-	if(audio_len==0)		/*  Only  play  if  we  have  data  left  */ 
+	if(audio_len==0)
 			return; 
-	len=(len>audio_len?audio_len:len);	/*  Mix  as  much  data  as  possible  */ 
+	len=(len>audio_len?audio_len:len);
 
 	SDL_MixAudio(stream,audio_pos,len,SDL_MIX_MAXVOLUME);
 	audio_pos += len; 
@@ -97,10 +97,12 @@ int main(int argc, char* argv[])
 		printf("cannot open this file\n");
 		return -1;
 	}
-	//For YUV420P
 	int pcm_buffer_size=4096;
 	char *pcm_buffer=(char *)malloc(pcm_buffer_size);
 	int data_count=0;
+
+	//Play
+	SDL_PauseAudio(0);
 
 	while(1){
 		if (fread(pcm_buffer, 1, pcm_buffer_size, fp) != pcm_buffer_size){
@@ -116,8 +118,7 @@ int main(int argc, char* argv[])
 		//Audio buffer length
 		audio_len =pcm_buffer_size;
 		audio_pos = audio_chunk;
-		//Play
-		SDL_PauseAudio(0);
+		
 		while(audio_len>0)//Wait until finish
 			SDL_Delay(1); 
 	}

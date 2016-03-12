@@ -16,9 +16,9 @@
  [初始化]
  SDL_Init(): 初始化SDL。
  SDL_OpenAudio(): 根据参数（存储于SDL_AudioSpec）打开音频设备。
+ SDL_PauseAudio(): 播放音频数据。
 
  [循环播放数据]
- SDL_PauseAudio(): 播放音频数据。
  SDL_Delay(): 延时等待播放完成。
 
  This software plays PCM raw audio data using SDL2.
@@ -31,7 +31,7 @@
  SDL_Init(): Init SDL.
  SDL_OpenAudio(): Opens the audio device with the desired 
 					parameters (In SDL_AudioSpec).
+ SDL_PauseAudio(): Play Audio.
 
  [Loop to play data]
- SDL_PauseAudio(): Play Audio.
  SDL_Delay(): Wait for completetion of playback.
